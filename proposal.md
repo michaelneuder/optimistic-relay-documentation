@@ -77,6 +77,7 @@ We see this in the data collected on the `ultra-sound relay`. The figure below s
 <img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/217935966-8985f4cc-0388-4983-893c-61e602f3a66b.jpeg">
 
 All the winning blocks arrive to the relay within the last few seconds of the previous slot. The following plot shows the amount of time it takes to simulate a block.
+
 <img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/217936342-aaac6105-8e65-4257-95db-e13f4a6b5d3c.jpeg">
 
 Generally around ~200ms, where these milliseconds at the end of the slot are incredibly valuable to the builder. 
