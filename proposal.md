@@ -69,14 +69,16 @@ block submission. MEV is a game of small margins, and speed is critical for succ
 <img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/217931229-2d79c7b2-4e2d-4a8e-89f5-0fe9be440923.png">
 In this case, the builder knows that their submission needs to reach the relay before time 12-Δ. Right after they submit their block, a large MEV opportunity arises.
 They can try to submit a new block that captures more MEV and thus has a higher probability of winning the auction, but it is too late as 
-the simulation will not complete before t=12. 
+the simulation will not complete before t=12. Intuitively, the longer the builder can wait before submitting their block, the longer they have to listen for transactions and thus the higher their bid.
+We see this in the data collected on the `ultra-sound relay`. The figure below shows the value of a bid as a function of time for slot 5771427 for 10 different builders:
 
-Intuitively, the longer the builder can wait before submitting their block, the longer they have to listen for transactions and thus the higher their bid.
-We see this in the data collected on the `ultra-sound relay`. The figure below shows the time that the winning block arrived to the relay for a number of slots:
+<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/218236401-cf5b4052-8e32-4871-99a9-c746156a23d6.png">
+
+We see that as time progresses the value of the bid increases. Further, the figure below shows the time that the winning block arrived to the relay for a number of slots (which are 12 seconds):
 
 <img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/217935966-8985f4cc-0388-4983-893c-61e602f3a66b.jpeg">
 
-All the winning blocks arrive to the relay within the last few seconds of the previous slot. The following plot shows the amount of time it takes to simulate a block.
+All the winning blocks arrive to the relay within the last few seconds of the previous slot --- usually around `t=11`. The following plot shows the amount of time it takes to simulate a block.
 
 <img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/217936342-aaac6105-8e65-4257-95db-e13f4a6b5d3c.jpeg">
 
@@ -91,7 +93,7 @@ the bid amount in the base `mev-boost` case.
 
 ## Security considerations
 
-There were a number of concerns raised in https://github.com/michaelneuder/mev-boost-relay/pull/2 that we would like to address. Thanks to Chris Hager, Alex Stokes, and Mateusz Morusiewicz for this initial feedback.
+There were a number of concerns raised in https://github.com/michaelneuder/mev-boost-relay/pull/2 that we would like to address. Thanks to Chris Hager, Alex Stokes, and Mateusz Morusiewicz for this initial feedback!
 
 #### Missed slots (liveness-attack)
 This proposal increases the risk of missed slots, but only marginally. Because the relay doesn't validate the block, the proposer could end up signing a bad header. The proposer is 
@@ -104,7 +106,7 @@ of missed slots caused by this change. If we ever determine that it exceeds what
 
 #### Collusion 
 Consider the case where the proposer and the builder are the same malicious actor. The builder could submit a large bid with an invalid block in order to ensure that they win the auction through the relay. This will result in an invalid block being proposed and the relay accounting system recording that the proposer is owed a large refund.
-However, the bid was collateralized by that same builder, so even though we issue a refund, it is the same actor that is being slashed, so the money is just going from the malicious actor to themselves. The only downside is that the relay team had to manually issue a refund, but we anticipate this to be a rare occurance, and 
+However, the bid was collateralized by that same builder, so even though we issue a refund, the funds are coming from same actor, so the actor is not earing any extra profit. The only downside is that the relay team had to manually issue a refund, but we anticipate this to be a rare occurance, and 
 by only onboarding trusted builders, we minimize this toil. Additionally, the proposer didn't accomplish anything other than skipping their slot, which they could
 do by just turning off their machine in the first place. 
 
@@ -116,10 +118,10 @@ bid results in them losing their collateral, which is not a rational choice.
 The proposer is incentivized to use the optimistic relay because it increases the size of the bids against their slot. Larger bids means more value extracted 
 for the proposer themselves. 
 
-The relay remain a neutral party that serves as an escrow mechanism, but does not receive any rewards.
+The relay remains a neutral party that serves as an escrow mechanism, but does not receive any rewards.
 
 #### Moral hazard 
-The more subtle argument is that this change introduces a moral hazard. While we acknowledge that there is a chance a few extra missed slots, we plan on approaching
+The more subtle argument is that this change introduces a moral hazard. Missed slots impact the entire chain, and while we acknowledge that there is a chance a few extra missed slots, we plan on approaching
 this change conservatively. By only allow-listing trusted builders initially, we ensure that there will be no runaway amount of missed slots (again only one 
 per-builder). We will actively collect data around any invalid blocks proposed and work with builders to understand what caused invalid block submissions. The builders
 are highly incentivized to avoid being slashed and thus will want to know what is going wrong with their blocks if something fails. 
