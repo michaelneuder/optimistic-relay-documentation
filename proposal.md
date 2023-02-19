@@ -70,19 +70,6 @@ block submission. MEV is a game of small margins, and speed is critical for succ
 In this case, the builder knows that their submission needs to reach the relay before time 12-Δ. Right after they submit their block, a large MEV opportunity arises.
 They can try to submit a new block that captures more MEV and thus has a higher probability of winning the auction, but it is too late as 
 the simulation will not complete before t=12. Intuitively, the longer the builder can wait before submitting their block, the longer they have to listen for transactions and thus the higher their bid.
-We see this in the data collected on the `ultra-sound relay`. The figure below shows the value of a bid as a function of time for slot 5771427 for 10 different builders:
-
-<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/218236401-cf5b4052-8e32-4871-99a9-c746156a23d6.png">
-
-We see that as time progresses the value of the bid increases. Further, the figure below shows the time that the winning block arrived to the relay for a number of slots (which are 12 seconds):
-
-<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/217935966-8985f4cc-0388-4983-893c-61e602f3a66b.jpeg">
-
-All the winning blocks arrive to the relay within the last few seconds of the previous slot --- usually around `t=11`. The following plot shows the amount of time it takes to simulate a block.
-
-<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/217936342-aaac6105-8e65-4257-95db-e13f4a6b5d3c.jpeg">
-
-Generally around ~200ms, where these milliseconds at the end of the slot are incredibly valuable to the builder. 
 
 #### A proposer's perspective 
 The proposers perspective is almost identical to the status quo of `mev-boost`, with the slight change that they no longer have a guarantee that the header 
@@ -128,16 +115,42 @@ are highly incentivized to avoid being slashed and thus will want to know what i
 
 ## Learnings from Goerli
 
-1. In our first implementation, we simulated winning optimistic blocks twice: (1) in the async call triggered by the block submission (2) in `getPayload` to check 
-if the winning block was valid. While this works in theory, we found it to be very brittle to simulate the same block twice. We got a number of errors from race 
-conditions between the parallel block submissions. Therefore we refactored the optimistic relay to only simulate each block a single time. In `getPayload` we make 
+#### Brittle nature of duplicate simulations
+
+In our first implementation, we simulated optimistic blocks that won the auction twice: (1) in the async call triggered by the block submission (2) in `getPayload` to check 
+if the winning block was valid. While this works in theory, we found it to be very brittle to simulate the same block twice as a number of errors from race 
+conditions between the parallel block submissions arose. Therefore we refactored the optimistic relay to only simulate each block a single time. In `getPayload` we make 
 use of the waitgroup for optimistic blocks. Once we know all the blocks for the slot have been processed, we check the demotions table for the winning block. 
 If it is there, then we know that an invalid block was delivered to the proposer, and thus a refund is necessary. This triggers an update on the demotions table 
 where we insert the `SignedBeaconBlock` and `SignedValidatorRegistration` to ensure all the relevant data is in one place.
-2. We wanted to more fully understand the performance of the block submission. Thus we added profiling to the handler and record the number of microseconds that
-each stage consume. We write this data to the block submissions table.
- 
+This new design is presented in https://github.com/flashbots/mev-boost-relay/pull/285.
 
+#### Payload too large errors
+We found that many blocks returned an error of `Payload too large`. After investigation, we realized that the max size of the payload for block submissions to the `prio-load-balancer` was too small. This PR updates the max size to 2MB: https://github.com/flashbots/prio-load-balancer/commit/d4d171c3fcda4e4ca49075031efa44065c4f9a5a.
+
+#### Performance analysis
+Since the optimistic relay is mainly about improving the performance of the block submission flow to allow builders to submit blocks later into the slot, we 
+collected performance data from the Goerli relay. The table below contains various percentiles of the distribution of the number of microseconds for the three stages of the submit block flow:
+
+<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/219968582-e26f93ff-a7ed-4a12-ab4c-835094a4b48b.png">
+
+
+The middle stage, `simulation_duration`, is what the v1 optimistic relay eliminates by removing the simulation of the blocks from the fast path. The first stage, `decode_duration`, is another huge portion of the overall runtime of the block submission flow. This stage is the process of recieving the payload over the network. With an `8 MB/s` connection, we have `8KB/ms`. 
+The median decode time is `~80ms` which implies `640KB` blocks. This seems like a reasonable estimate. Additionally, the network latency is high variance.
+The following plot shows the correlation between decoding time and the size of the payload. We color the data points by the builder pubkey. Clearly, there
+is a positive correlation between the two, and different builders have different networking connections which also show up in the data. 
+
+<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/219968993-b2cb260e-25af-4cf1-9cd6-ad8f05289719.png">
+
+We also collected data around the builder bids over the course of a slot. The following figure shows the value of a bid as a function of time for slot 5771427 for 10 different builders:
+
+<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/218236401-cf5b4052-8e32-4871-99a9-c746156a23d6.png">
+
+More broadly, we can observe the probability distributions over the slot duration of when the winning block arrived at the relay. 
+<img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/219969192-c52275b4-48fa-4db1-90fd-b88c4c7ca637.png">
+
+Clearly, the later seconds in the slot have a much higher probability of containing the winning bid. This follows directly from the fact that more MEV will occur 
+during the slot, allowing later blocks to capture more and thus increase their bid size.
 
 ## FAQ by Justin Drake
 
