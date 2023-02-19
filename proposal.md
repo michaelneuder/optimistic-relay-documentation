@@ -128,11 +128,16 @@ are highly incentivized to avoid being slashed and thus will want to know what i
 
 ## Learnings from Goerli
 
-TODO(mikeneuder): add when we have learned something :-)
+1. In our first implementation, we simulated winning optimistic blocks twice: (1) in the async call triggered by the block submission (2) in `getPayload` to check 
+if the winning block was valid. While this works in theory, we found it to be very brittle to simulate the same block twice. We got a number of errors from race 
+conditions between the parallel block submissions. Therefore we refactored the optimistic relay to only simulate each block a single time. In `getPayload` we make 
+use of the waitgroup for optimistic blocks. Once we know all the blocks for the slot have been processed, we check the demotions table for the winning block. 
+If it is there, then we know that an invalid block was delivered to the proposer, and thus a refund is necessary. This triggers an update on the demotions table 
+where we insert the `SignedBeaconBlock` and `SignedValidatorRegistration` to ensure all the relevant data is in one place.
+2. We wanted to more fully understand the performance of the block submission. Thus we added profiling to the handler and record the number of microseconds that
+each stage consume. We write this data to the block submissions table.
+ 
 
-## Optimistic relay: potential roadmap
-
-TODO(mikeneuder)
 
 ## FAQ by Justin Drake
 
