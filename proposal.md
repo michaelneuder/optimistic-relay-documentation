@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document introduces the concept of the Optimistic Relay to accompany https://github.com/flashbots/mev-boost-relay/pull/279, which is a small 
+This document introduces the concept of the Optimistic Relay to accompany https://github.com/flashbots/mev-boost-relay/pull/285, which is a small 
 PR which adds the functionality to Flashbots' `mev-boost-relay`. While the PR gets into the details of *how* the optimistic feature is added,
 this document aims at motivating the change in the broader context of `mev-boost` and the existing Ethereum literature on Proposer-Builder Separation (PBS).
 
