@@ -8,8 +8,7 @@ this document aims at motivating the change in the broader context of `mev-boost
 
 ## mev-boost today
 
-`mev-boost` has become critical infrastructure since it was introduced by Flashbots. There are a number of excellent data sources to demostrate this. 
-These three are my favorites:
+`mev-boost` has become critical infrastructure since it was introduced by Flashbots. There are a number of excellent data sources to demostrate this:
 
 - https://www.mevboost.org/
 - https://mevboost.pics/
@@ -38,18 +37,16 @@ goal of building understanding about how the mechanisms proposed in the PBS lite
 This aims to be a step towards understanding what (if anything) should be enshrined in the protocol.
 
 The primary difference between `mev-boost` and in-protocol PBS (IP-PBS) is the presence of the relay. The relay is a trusted intermediary between the block builders and 
-the proposers, while in IP-PBS other validators enforce the rules of the block building auction through attestations. For this reason, phase 1 of the Optimistic Relay and
-more generally the roadmap described below gradually reduce the role of the relay in block production.  
+the proposers, while in IP-PBS other validators enforce the rules of the block building auction through attestations. For this reason, phase 1 of the Optimistic Relay reduces the role of the relay in block production.  
 
 #### Asynchronous block validation
 The key idea in phase 1 is to change the builder block submission flow to make the block validation an asnychronous process. When the builder submits a block 
 to the relay, that bid is immediately elligible to win the auction, even if the relay hasn't had a chance to check that the block is valid. This allows builders 
 to submit more blocks, and importantly submit blocks later in the slot (because they don't have to wait for the block to be validated for the bid to register). 
-We call it "optimistic" because the relay assumes that the block is valid in the short-term, while deferring the actual validation the the subsequent slot. A 
-builder must post collateral with the relay to take advantage of this optimistic processing of their blocks, and if they submit an invalid block they are "demoted" 
+We call it "optimistic" because the relay assumes that the block is valid in the short-term, while deferring the actual validation to a later time. A 
+builder must post collateral (or have a guarantor) with the relay to take advantage of this optimistic processing of their blocks, and if they submit an invalid block they are "demoted" 
 back to the current `mev-boost` implementation where each block is validated before the bid is considered elligible. Critically, if a builder submits an 
-invalid block that ends up winning the auction and being proposed, that builder's collateral is slashed by the winning amount, and the proposer who missed their 
-slot is refunded the bid. 
+invalid block that ends up winning the auction and being proposed the validator who missed their slot is refunded the amount of the winning bid. 
 
 #### A builder's perspective 
 
@@ -83,7 +80,7 @@ the bid amount in the base `mev-boost` case.
 There were a number of concerns raised in https://github.com/michaelneuder/mev-boost-relay/pull/2 that we would like to address. Thanks to Chris Hager, Alex Stokes, and Mateusz Morusiewicz for this initial feedback!
 
 #### Relay collateralization
-Relay operators who manage collateral to enable optimistic processing are accountable for the additional legal and operational complexity of managing these funds. This has been raised as a large concern by numerous parties.
+Relay operators who manage collateral to enable optimistic processing are accountable for the additional legal and operational complexity of managing these funds. This has been raised as a significant concern by some parties.
 The solution we propose for the Ultra Sound Relay is a builder-guarantor approach. The relay acts as an intermediary to determine if/when a builder bug results in a missed slot, but the
 expected outcome is that once the issue is brought to the builder, they directly refund the proposer who missed the slot. Since builder reputation far exceeds
 the monetary value of the missed slots, we expect that in the vast majority of refunds to process smoothly in this fashion. In the exceptional case where a builder stops 
@@ -92,7 +89,7 @@ their remaining collateral for that builder, and thus the builder will be back t
 on publishing a postmortem publicly explaining what happened. The format for the postmortem will be: (a) a timeline of events, (b) the builder and proposer involved, (c) the bid that resulted in the missed slot, (d) the error associated with the bid, (e) the refund details.
 This information will provide transparency into the relay operation and allow us to monitor common builder failure modes. 
 An additional benefit of this approach is the ability
-for guarantors to be separate entities from the relay itself. For example, the Ultra Sound Relay is willing to act as a guarantor for trusted builders for other relays
+for guarantors to be separate entities from the relay itself. For example, the Ultra Sound Relay is willing to act as a guarantor for trusted builders for other smaller relays
 to remove any overhead of managing collateral and refunds. To bootstrap this process, the Ultra Sound Relay is willing to act as a 1 ETH guarantor for the following builders:
 ```
 * builder0x69
@@ -120,7 +117,7 @@ unable to rectify the situation by signing a valid block, because signing two bl
 at most one missed slot per-optimistc builder before a manual intervention. By default, all builders are treated non-optimistically and the process of posting collateral is manual. 
 If that builder ends up submitting a bad block, a single slot will be missed and we will manually investigate the failure, initiate the refund, and 
 communicate with the builder. Only once we have high confidence that we understand what went wrong and why it won't happen again will we allow the builder to re-post collateral and have access 
-to optimistic processing once again. Additionally, we only optimistically process blocks that have a value less than the collateral posted for a builder. The builder is free to submit blocks with huge MEV that exceeds their collateral, we just will validate those bids synchronously because they can't cover refund amount. Lastly, have the benefit of rolling this change out slowly. By starting with just the `ultra-sound relay` we can continually monitor the number 
+to optimistic processing once again. Additionally, we only optimistically process blocks that have a value less than the collateral posted for a builder. The builder is free to submit blocks with huge MEV that exceeds their collateral, we just will validate those bids synchronously because they can't cover refund amount. Lastly, have the benefit of rolling this change out slowly. By starting with just the Ultra Sound Relay we can continually monitor the number 
 of missed slots caused by this change. If we ever determine that it exceeds what we are comfortable with, we can simply turn it off. 
 
 #### Collusion 
@@ -142,8 +139,8 @@ The relay remains a neutral party that serves as an escrow mechanism, but does n
 #### Moral hazard 
 The more subtle argument is that this change introduces a moral hazard. Missed slots impact the entire chain, and while we acknowledge that there is a chance a few extra missed slots, we plan on approaching
 this change conservatively. By only allow-listing trusted builders initially, we ensure that there will be no runaway amount of missed slots (again only one 
-per-builder). We will actively collect data around any invalid blocks proposed and work with builders to understand what caused invalid block submissions. The builders
-are highly incentivized to avoid being slashed and thus will want to know what is going wrong with their blocks if something fails. 
+per-builder per-manual intervention). We will actively collect data around any invalid blocks proposed and work with builders to understand what caused invalid block submissions. Public post-mortems will increase transparency and allow community feedback and engagement around the project as a whole. The builders
+are highly incentivized to avoid submitting invalid blocks and thus will want to know what is going wrong with their blocks if something fails. 
 
 ## Learnings from Goerli
 
@@ -167,7 +164,7 @@ collected performance data from the Goerli relay. The table below contains vario
 <img width="797" alt="Screen Shot 2023-02-09 at 3 36 18 PM" src="https://user-images.githubusercontent.com/24661810/219968582-e26f93ff-a7ed-4a12-ab4c-835094a4b48b.png">
 
 
-The middle stage, `simulation_duration`, is what the v1 optimistic relay eliminates by removing the simulation of the blocks from the fast path. The first stage, `decode_duration`, is another huge portion of the overall runtime of the block submission flow. This stage is the process of recieving the payload over the network. With an `8 MB/s` connection, we have `8KB/ms`. 
+The middle stage, `simulation_duration`, is what the v1 optimistic relay eliminates by removing the simulation of the blocks from the fast path. The first stage, `decode_duration`, is another huge portion of the overall runtime of the block submission flow. This stage is the process of recieving the payload over the network. With an `8 MB/s` connection, we have `8 KB/ms`. 
 The median decode time is `~80ms` which implies `640KB` blocks. This seems like a reasonable estimate. Additionally, the network latency is high variance.
 The following plot shows the correlation between decoding time and the size of the payload. We color the data points by the builder pubkey. Clearly, there
 is a positive correlation between the two, and different builders have different networking connections which also show up in the data. 
