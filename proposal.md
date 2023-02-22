@@ -83,16 +83,16 @@ the bid amount in the base `mev-boost` case.
 There were a number of concerns raised in https://github.com/michaelneuder/mev-boost-relay/pull/2 that we would like to address. Thanks to Chris Hager, Alex Stokes, and Mateusz Morusiewicz for this initial feedback!
 
 #### Relay collateralization
-Relay operators who manage collateral to enable optimistic processing are accountable for the additional legal and operational complexity of managing these funds. This has been raised as the main concern by numerous parties.
+Relay operators who manage collateral to enable optimistic processing are accountable for the additional legal and operational complexity of managing these funds. This has been raised as a large concern by numerous parties.
 The solution we propose for the Ultra Sound Relay is a builder-guarantor approach. The relay acts as an intermediary to determine if/when a builder bug results in a missed slot, but the
 expected outcome is that once the issue is brought to the builder, they directly refund the proposer who missed the slot. Since builder reputation far exceeds
 the monetary value of the missed slots, we expect that in the vast majority of refunds to process smoothly in this fashion. In the exceptional case where a builder stops 
 responding or decides to withhold the refund, the builder-guarantor intervenes and refunds the proposer. The guarantor for the offending builder will likely remove 
-their remaining collateral for that builder, and thus the builder will be back to the non-optimistic processing. Additionally, for each refundable event, we plan 
+their remaining collateral for that builder, and thus the builder will be back to non-optimistic processing. Additionally, for each refundable event, we plan 
 on publishing a postmortem publicly explaining what happened. The format for the postmortem will be: (a) a timeline of events, (b) the builder and proposer involved, (c) the bid that resulted in the missed slot, (d) the error associated with the bid, (e) the refund details.
 This information will provide transparency into the relay operation and allow us to monitor common builder failure modes. 
 An additional benefit of this approach is the ability
-for guarantors to be separate entities than the relay itself. For example, the Ultra Sound Relay is willing to act as a guarantor for trusted builders for other relays
+for guarantors to be separate entities from the relay itself. For example, the Ultra Sound Relay is willing to act as a guarantor for trusted builders for other relays
 to remove any overhead of managing collateral and refunds. To bootstrap this process, the Ultra Sound Relay is willing to act as a 1 ETH guarantor for the following builders:
 ```
 * builder0x69
@@ -112,7 +112,7 @@ to remove any overhead of managing collateral and refunds. To bootstrap this pro
 * manifold
 * Rick Astley
 ```
-New builders who are willing to engage with the Ultra Sound Relay team and willing to demonstrate high-fidelity block production can get added to this list!
+New builders who are willing to engage with the Ultra Sound Relay team and demonstrate high-fidelity block production can get added to this list!
 
 #### Missed slots (liveness-attack)
 This proposal increases the risk of missed slots, but only marginally. Because the relay doesn't validate the block, the proposer could end up signing a bad header. The proposer is 
