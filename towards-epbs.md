@@ -4,7 +4,7 @@
 Present a roadmap towards Enshrined PBS (ePBS) through a series of modifications
 to the existing `mev-boost` [relay](https://github.com/flashbots/mev-boost-relay) 
 functionality. By progressively removing the relay responsibilities,
-we aim to converge to a system that looks quite similar to <ins>[existing](https://ethresear.ch/t/two-slot-proposer-builder-separation/10980)</ins> <ins>[proposals](https://ethresear.ch/t/single-slot-pbs-using-attesters-as-distributed-availability-oracle/11877)</ins> for ePBS.
+we aim to converge to a system that looks quite similar to [existing](https://ethresear.ch/t/two-slot-proposer-builder-separation/10980) [proposals](https://ethresear.ch/t/single-slot-pbs-using-attesters-as-distributed-availability-oracle/11877) for ePBS.
 
 ### Rationale
 1. **Agility** — Approach the protocol upgrade as suggested by Justin in the [Censorship Panel](https://www.youtube.com/watch?v=Z9VCdiSPJEQ&t=2729s) at SBC 2022. To front-load the 
@@ -12,7 +12,8 @@ R&D effort, we can iterate quickly by experimenting with a portion of existing
 relays, builders, and validators to reduce uncertainty and risk around full ePBS.
 There are tradeoffs between ePBS and `mev-boost` as highlighted by Barnabé at [Devconnect 2022](https://youtu.be/jQjBNbEv9Mg?t=943) and in [Notes on PBS](https://barnabe.substack.com/i/82304191/market-structure-and-allocation-mechanism). Through this roadmap we explore the 
 design space between the two ends of the spectrum.
-2. **Inevitability** — At [Devconnect 2022](https://www.youtube.com/watch?v=OD54WfVuDWw&t=818s), Vitalik pointed out the with Danksharding, some separation becomes mandatory. This roadmap
+2. **Inevitability** — At [Devconnect 2022](https://www.youtube.com/watch?v=OD54WfVuDWw&t=818s), Vitalik noted that with Danksharding, some separation becomes mandatory because bandwidth
+requirements for large blocks exceed what is within reach of a home-staker. This roadmap
 allows us to progress the research discussion by implementing (with feedback from the community)
 changes to the existing `mev-boost` architecture to see how they function in practice. 
 This increases our understanding of how the block building market could behave in ePBS.
