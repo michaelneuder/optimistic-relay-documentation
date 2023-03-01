@@ -7,22 +7,20 @@ functionality. By progressively removing the relay responsibilities,
 we aim to converge to a system that looks quite similar to [existing](https://ethresear.ch/t/two-slot-proposer-builder-separation/10980) [proposals](https://ethresear.ch/t/single-slot-pbs-using-attesters-as-distributed-availability-oracle/11877) for ePBS.
 
 ### Rationale
-1. **Agility** — Approach the protocol upgrade as suggested by Justin in the [Censorship Panel](https://www.youtube.com/watch?v=Z9VCdiSPJEQ&t=2729s) at SBC 2022. To front-load the 
+1. **Agility** — We aim to approach this protocol upgrade as suggested by Justin in the [Censorship Panel](https://www.youtube.com/watch?v=Z9VCdiSPJEQ&t=2729s) at SBC. To front-load the 
 R&D effort, we can iterate quickly by experimenting with a portion of existing 
 relays, builders, and validators to reduce uncertainty and risk around full ePBS.
-There are tradeoffs between ePBS and `mev-boost` as highlighted by Barnabé at [Devconnect 2022](https://youtu.be/jQjBNbEv9Mg?t=943) and in [Notes on PBS](https://barnabe.substack.com/i/82304191/market-structure-and-allocation-mechanism). Through this roadmap we explore the 
-design space between the two ends of the spectrum.
-2. **Inevitability** — At [Devconnect 2022](https://www.youtube.com/watch?v=OD54WfVuDWw&t=818s), Vitalik noted that with Danksharding, some separation becomes mandatory because bandwidth
+There are tradeoffs between ePBS and `mev-boost` as highlighted by Barnabé at [Devconnect](https://youtu.be/jQjBNbEv9Mg?t=943) and in [Notes on PBS](https://barnabe.substack.com/i/82304191/market-structure-and-allocation-mechanism). Through this roadmap we explore the 
+design space between the two ends of the spectrum, without fully committing upfront to ePBS.
+2. **Inevitability** — At [Devconnect](https://www.youtube.com/watch?v=OD54WfVuDWw&t=818s), Vitalik noted that with Danksharding, some builder separation becomes mandatory because bandwidth
 requirements for large blocks exceed what is within reach of a home-staker. This roadmap
-allows us to progress the research discussion by implementing (with feedback from the community)
-changes to the existing `mev-boost` architecture to see how they function in practice. 
-This increases our understanding of how the block building market could behave in ePBS.
+allows us to progress the research discussion by examining how different mechanisms work in practice.
 3. **Accessibility** — By presenting relay data and designing the optimistic architecture in the open, we increase visibility into the
 existing block building market. This helps answer research questions (e.g., 
 [ROP-0](https://efdn.notion.site/ROP-0-Timing-games-in-Proof-of-Stake-385f0f6279374a90b52bf380ed76a85b)) and allows 
 independent relays stay competitive with vertically integrated Builder-Relays. 
 Additionally, optimistic relaying actually reduces the hardware and networking
-[resources](https://collective.flashbots.net/t/ideas-for-incentivizing-relays/586) required for a current relay to be competitive, lowering the barrier of entry. 
+[resources](https://collective.flashbots.net/t/ideas-for-incentivizing-relays/586) required for a relay to be competitive, lowering the barrier of entry. 
 
 
 
@@ -47,12 +45,12 @@ to the relay.
 As implemented, the relay aims to be a simple, mutually-trusted, neutral third-party to
 connect builders and proposers. The relay duties and the corresponding trust assumptions are
 
-1. Storing the builder header and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*
-2. Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
+- Storing the builder header and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*
+- Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
 to provide a valid header to sign.*
-3. Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
+- Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
 to check that the block that pays them.*
-4. Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.\** 
+- Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.\** 
 
 > \* Note that the winning block is returned to the proposer,
 so even if the relay doesn't publish the block, the proposer should and is incentivized to do so. We still list it as a trust assumption because the builder doesn't trust the proposer,
@@ -85,8 +83,7 @@ MEV for both parties. Under this design, builders can submit high bids for inval
 that end up winning the auction, which results in a missed slot (because the proposer
 signed an invalid header). We account for this by requiring builders to post collateral to
 the relay which will be used to refund proposers if a slot is missed. See the [proposal](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md), [implementation](https://github.com/flashbots/mev-boost-relay/pull/285), and [community call](https://collective.flashbots.net/t/mev-boost-community-call-0-23-feb-2023/1348) for further details. 
-Further, this proposal should lower the hardware and networking requirements of running a relay because now there is no need for large amounts of burst compute and bandwidth
-at the end of the slot because the block simulation is handled asynchronously in the next slot.
+This proposal should lower the hardware and networking requirements of running a relay because now there is no need for large amounts of burst compute and bandwidth due to the block simulation being handled asynchronously in the next slot.
 
 Beyond the practical benefits mentioned above, we also modified the relay duties and trust assumptions. Now, the relay is responsible for
 
@@ -96,7 +93,7 @@ to provide a valid header to sign.*~~
 3. ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
 to check that the block that pays them.*~~
 4. Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*
-5. <span style="color:green">**[new]**</span> Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of a missed slot.*
+5. <span style="color:green">**[new]**</span> Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid.*
 
 This demonstrates the main objective of this roadmap — "to reduce the duties and trust assumptions associated with relays". 
 
@@ -128,8 +125,8 @@ to the relay.
 #### What is the relay doing?
 Under this design, the relay no longer receives the execution body of the block that the builder constructed. 
 This removes another piece of the trust between the builder and the relay 
-because it removes the relay's ability to steal MEV. The block never leaves the builders
-machine until it receives a signed header committing to that block. This leaves the
+because it removes the relay's ability to steal MEV. The block never leaves the builder's
+machine until it receives a signed header committing to that block. This allocates the
 task of publishing the signed block up to the builder, who is incentivized to do so
 in order to earn the reward associated with the publication. The relay has one new task under
 this paradigm, which is to observe the mempool and await the signed block associated with
@@ -148,7 +145,7 @@ to check that the block that pays them.*~~
 > This design has 2 additional practical benefits. (1) It completely removes the bandwidth
 intensive process of transmitting the block from the builder to the relay. This is a 
 [zero copy](https://en.wikipedia.org/wiki/Zero-copy) approach as the block only ever
-resides on the builder machine. This will become more important as the size of blocks grows during the implementation of the sharding roadmap, and further reduces the hardware and network requirements to run an independent relay. (2) This removes the ability of a relay to censor. 
+resides on the builder machine until it is published. This becomes increasingly important as the size of blocks grows as a result of the sharding roadmap, and further reduces the hardware and network requirements to run an independent relay. (2) The relay is no longer able to censor. 
 The relay only proxies the header, and thus has no ability determine information about 
 the transactions in the execution body. 
 
@@ -183,6 +180,12 @@ to check that the block that pays them.*~~
 4. ~~Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*~~
 5. Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid block.*
 6. Observing the mempool $\implies$ *Trust assumption 6: the proposer trusts the relay to refund them in the case of a missing block.*
+
+> Note that the proposer payments could be implemented in an unconditional way. Such a mechanism was [presented](https://github.com/flashbots/mev-boost/issues/109)
+by Alex O. and Stephane. This would reduce the trust assumptions to zero. The tradeoff here
+is the engineering complexity and inherent risk of using smart contracts to implement this logic.
+This may well be worth investing time into in the future, but we estimate that in the short-term, the 
+relay operators (or [guarantors](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md#relay-collateralization)) should handle the refunds manually.
 
 ## ePBS — "Replace the relay with a committee"
 The final evolution of this roadmap is to replace the v3 relay with a committee of 
