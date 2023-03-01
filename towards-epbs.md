@@ -87,13 +87,13 @@ This proposal should lower the hardware and networking requirements of running a
 
 Beyond the practical benefits mentioned above, we also modified the relay duties and trust assumptions. Now, the relay is responsible for
 
-1. Storing the builder header and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*
-2. ~~Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
+- Storing the builder header and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*
+- ~~Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
 to provide a valid header to sign.*~~
-3. ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
+- ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
 to check that the block that pays them.*~~
-4. Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*
-5. <span style="color:green">**[new]**</span> Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid.*
+- Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*
+- <span style="color:green">**[new]**</span> Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid.*
 
 This demonstrates the main objective of this roadmap — "to reduce the duties and trust assumptions associated with relays". 
 
@@ -133,14 +133,14 @@ this paradigm, which is to observe the mempool and await the signed block associ
 the header that won the auction. If the block does not appear on time, then the proposer 
 must be refunded in the same manner as v1. The relay role has evolved to
 
-1. Storing the builder header ~~and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*~~
-2. ~~Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
+- Storing the builder header ~~and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*~~
+- ~~Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
 to provide a valid header to sign.*~~
-3. ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
+- ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
 to check that the block that pays them.*~~
-4. ~~Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*~~
-5. Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid block.*
-6. <span style="color:green">**[new]**</span> Observing the mempool $\implies$ *Trust assumption 6: the proposer trusts the relay to refund them in the case of a missing block.*
+- ~~Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*~~
+- Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid block.*
+- <span style="color:green">**[new]**</span> Observing the mempool $\implies$ *Trust assumption 6: the proposer trusts the relay to refund them in the case of a missing block.*
 
 > This design has 2 additional practical benefits. (1) It completely removes the bandwidth
 intensive process of transmitting the block from the builder to the relay. This is a 
@@ -172,14 +172,14 @@ publish a valid block on time. This situation would be treated exactly as in v1 
 the proposer is refunded for their missed slot using the builder collateral. In this
 last iteration, the relay role is reduced to
 
-1. ~~Storing the builder header and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*~~
-2. ~~Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
+- ~~Storing the builder header and execution body $\implies$ *Trust assumption 1: the builder trusts relay not to steal their MEV.*~~
+- ~~Validating the body $\implies$ *Trust assumption 2: the proposer trusts the relay
 to provide a valid header to sign.*~~
-3. ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
+- ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
 to check that the block that pays them.*~~
-4. ~~Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*~~
-5. Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid block.*
-6. Observing the mempool $\implies$ *Trust assumption 6: the proposer trusts the relay to refund them in the case of a missing block.*
+- ~~Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*~~
+- Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid block.*
+- Observing the mempool $\implies$ *Trust assumption 6: the proposer trusts the relay to refund them in the case of a missing block.*
 
 > Note that the proposer payments could be implemented in an unconditional way. Such a mechanism was [presented](https://github.com/flashbots/mev-boost/issues/109)
 by Alex O. and Stephane. This would reduce the trust assumptions to zero. The tradeoff here
