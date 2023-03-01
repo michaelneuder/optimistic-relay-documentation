@@ -1,7 +1,7 @@
-# Towards Enshrined PBS — An Optimistic Roadmap
+# Towards enshrined PBS — an optimistic roadmap
 
 ## Purpose
-Present a roadmap towards Enshrined PBS (ePBS) through a series of modifications
+Present a roadmap towards enshrined PBS (ePBS) through a series of modifications
 to the existing `mev-boost` [relay](https://github.com/flashbots/mev-boost-relay) 
 functionality. By progressively removing the relay responsibilities,
 we aim to converge to a system that looks quite similar to [existing](https://ethresear.ch/t/two-slot-proposer-builder-separation/10980) [proposals](https://ethresear.ch/t/single-slot-pbs-using-attesters-as-distributed-availability-oracle/11877) for ePBS.
