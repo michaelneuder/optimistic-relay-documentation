@@ -3,23 +3,28 @@
 ## Purpose
 Present a roadmap towards Enshrined PBS (ePBS) through a series of modifications
 to the existing `mev-boost` [relay](https://github.com/flashbots/mev-boost-relay) 
-functionality. By progressively removing and modifying the relay responsibilities,
+functionality. By progressively removing the relay responsibilities,
 we aim to converge to a system that looks quite similar to <ins>[existing](https://ethresear.ch/t/two-slot-proposer-builder-separation/10980)</ins> <ins>[proposals](https://ethresear.ch/t/single-slot-pbs-using-attesters-as-distributed-availability-oracle/11877)</ins> for ePBS.
 
-#### Rationale
-1. Approach the protocol upgrade as suggested by Justin in the [Censorship Panel](https://www.youtube.com/watch?v=Z9VCdiSPJEQ&t=2729s) at SBC 2022. To front-load the 
+### Rationale
+1. **Agility** — Approach the protocol upgrade as suggested by Justin in the [Censorship Panel](https://www.youtube.com/watch?v=Z9VCdiSPJEQ&t=2729s) at SBC 2022. To front-load the 
 R&D effort, we can iterate quickly by experimenting with a portion of existing 
-relays to reduce uncertainty and risk around ePBS.
-2. At [Devconnect 2022](https://www.youtube.com/watch?v=OD54WfVuDWw&t=818s), Vitalik pointed out the with Danksharding, some separation becomes mandatory. This roadmap
+relays, builders, and validators to reduce uncertainty and risk around full ePBS.
+There are tradeoffs between ePBS and `mev-boost` as highlighted by Barnabé at [Devconnect 2022](https://youtu.be/jQjBNbEv9Mg?t=943) and in [Notes on PBS](https://barnabe.substack.com/i/82304191/market-structure-and-allocation-mechanism). Through this roadmap we explore the 
+design space between the two ends of the spectrum.
+2. **Inevitability** — At [Devconnect 2022](https://www.youtube.com/watch?v=OD54WfVuDWw&t=818s), Vitalik pointed out the with Danksharding, some separation becomes mandatory. This roadmap
 allows us to progress the research discussion by implementing (with feedback from the community)
 changes to the existing `mev-boost` architecture to see how they function in practice. 
-This increases our understanding of how the block building market could look in ePBS.
-3. By collecting and presenting relay data, we can increase visibility into the
-existing block building market. This can help answer research questions (e.g., 
-[ROP-0](https://efdn.notion.site/ROP-0-Timing-games-in-Proof-of-Stake-385f0f6279374a90b52bf380ed76a85b)) and will help 
+This increases our understanding of how the block building market could behave in ePBS.
+3. **Accessibility** — By presenting relay data and designing the optimistic architecture in the open, we increase visibility into the
+existing block building market. This helps answer research questions (e.g., 
+[ROP-0](https://efdn.notion.site/ROP-0-Timing-games-in-Proof-of-Stake-385f0f6279374a90b52bf380ed76a85b)) and allows 
 independent relays stay competitive with vertically integrated Builder-Relays. 
 Additionally, optimistic relaying actually reduces the hardware and networking
-resources required for a current relay to be competitive, lowering the barrier of entry. 
+[resources](https://collective.flashbots.net/t/ideas-for-incentivizing-relays/586) required for a current relay to be competitive, lowering the barrier of entry. 
+
+
+
 
 ## Block lifecycle
 The figure below schematizes the lifecycle of a block in the existing `mev-boost`
@@ -136,7 +141,7 @@ to provide a valid header to sign.*~~
 3. ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
 to check that the block that pays them.*~~
 4. ~~Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*~~
-5. Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of a missing block.*
+5. Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid block.*
 6. <span style="color:green">**[new]**</span> Observing the mempool $\implies$ *Trust assumption 6: the proposer trusts the relay to refund them in the case of a missing block.*
 
 > This design has 2 additional practical benefits. (1) It completely removes the bandwidth
@@ -175,8 +180,21 @@ to provide a valid header to sign.*~~
 3. ~~Validating the payment $\implies$ *Trust assumption 3: the proposer trusts the relay
 to check that the block that pays them.*~~
 4. ~~Publishing the winning block $\implies$ *Trust assumption 4: the builder trusts the relay to publish the winning block.*~~
-5. Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of a missing block.*
+5. Refunding proposers who signed invalid header $\implies$ *Trust assumption 5: the proposer trusts the relay to refund them in the case of an invalid block.*
 6. Observing the mempool $\implies$ *Trust assumption 6: the proposer trusts the relay to refund them in the case of a missing block.*
 
 ## ePBS — "Replace the relay with a committee"
+The final evolution of this roadmap is to replace the v3 relay with a committee of 
+validators and enshrine PBS into the protocol. The specifics of the mechanism
+can vary; Vitalik has proposed [single-slot](https://ethresear.ch/t/single-slot-pbs-using-attesters-as-distributed-availability-oracle/11877) and 
+[two-slot](https://ethresear.ch/t/two-slot-proposer-builder-separation/10980). 
+Under the two-slot implementation (which seems to be the most popular currently),
+the proposer chooses a header to include in their beacon block. 
+One committee attests to this block and once a builder is confident that the block
+will not be reorged, they publish an intermediate block with the full execution payload that the 
+remaining committees attest to. 
+
+Note how the first committee attests 
+to the timely publication of a signed header and the remaining committees attest to the timely publication of a signed block, which is exactly the role that the 
+relay plays in v3.
 
