@@ -1,5 +1,7 @@
 # Towards enshrined PBS — an optimistic roadmap
 
+_"This has been a latency awakening" - Justin Drake (march 1, 2023)_
+
 ## Purpose
 Present a roadmap towards enshrined PBS (ePBS) through a series of modifications
 to the existing `mev-boost` [relay](https://github.com/flashbots/mev-boost-relay) 
