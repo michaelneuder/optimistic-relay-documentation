@@ -20,7 +20,7 @@ requirements for large (32 MB) blocks exceed what is within reach of a home-stak
 allows us to progress the research discussion by examining how different mechanisms work in practice.
 3. **Accessibility** — By presenting relay data and designing the optimistic architecture in the open, we increase visibility into the
 existing block building market. This helps answer research questions (e.g., 
-[ROP-0](https://efdn.notion.site/ROP-0-Timing-games-in-Proof-of-Stake-385f0f6279374a90b52bf380ed76a85b)) and allows 
+[ROP-0](https://efdn.notion.site/ROP-0-Timing-games-in-Proof-of-Stake-385f0f6279374a90b52bf380ed76a85b from Barnabé and Casper)) and allows 
 independent relays stay competitive with vertically integrated Builder-Relays. 
 Additionally, optimistic relaying actually reduces the hardware and networking
 [resources](https://collective.flashbots.net/t/ideas-for-incentivizing-relays/586) required for a relay to be competitive, lowering the barrier of entry. 
