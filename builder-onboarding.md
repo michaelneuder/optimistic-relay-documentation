@@ -60,9 +60,9 @@ who is *not* demoted will be handled optimistically. Consider the example below:
  0xaa1488...    | true       |                   0  | bloxroute
 ```
 Pubkeys `0xacea6a` and `0xa841ce` are not demoted and share a collateral value of 1 ETH with the `collateral_id=mikes-collateral`, so any block
-that they submit that has a value of less than 1 ETH will be optimistic. If either pubkey submits an invalid block, the will both be demoted. Builder `0xb67a51` 
+that they submit that has a value of less than 1 ETH will be optimistic. If either pubkey submits an invalid block, they will both be demoted. Builder `0xb67a51` 
 also has 1 ETH of collateral, but because `is_demoted=true`, their blocks will all be processed
-normally. Builder `0xaa1488` has no collateral, so their blocks will be processed normally.
+pessimistically. Builder `0xaa1488` has no collateral, so their blocks will be processed pessimistically.
 
 Once the collateral is updated in the database and the builder indicates that they are ready,
 we will manually change the `is_demoted` to `false`. At any point if a demotion occurs, `is_demoted` will be set back to `true`, and
@@ -70,13 +70,13 @@ a follow up analysis will be conducted to determine the cause of the block simul
 Once the error is understood and there is a consensus that it is safe to resume optimistic building, 
 we will manually reset `is_demoted` to `false`.
 
-> Any block simulation failure will result in a demotion. We will save the details of the
-failed simulations and work with the builders to understand the root cause and how it 
+> Any block simulation failure will result in a demotion that records the details of the
+failed simulations. We will work with the builders to understand the root cause and how it 
 can be remedied.
 
 ### Posting collateral
 The first step in onboarding is posting collateral. To start, we are capping this 
-collateral at 1 ETH per builder pubkey. Collateral can be sent to \<INSERT ENS NAME\>. 
+collateral at 1 ETH per-pubkey. Collateral can be sent to \<INSERT ENS NAME\>. 
 Please send us the transaction details via telegram or discord, and we will manually update
 the database. 
 
