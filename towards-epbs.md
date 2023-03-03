@@ -2,7 +2,7 @@
 
 ###### _"This has been a latency awakening" - Justin Drake (March 1, 2023)_
 
-## Purpose
+### Purpose
 Present a roadmap towards enshrined PBS (ePBS) through a series of modifications
 to the existing `mev-boost` [relay](https://github.com/flashbots/mev-boost-relay). By progressively removing the relay responsibilities and pruning the 
 critical path of the block-building pipeline,
