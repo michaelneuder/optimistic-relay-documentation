@@ -22,7 +22,9 @@ existing block-building market. This helps answer research questions (e.g.,
 [ROP-0](https://efdn.notion.site/ROP-0-Timing-games-in-Proof-of-Stake-385f0f6279374a90b52bf380ed76a85b) from Barnabé and Caspar) and allows 
 independent relays stay competitive with vertically integrated Builder-Relays. 
 Additionally, optimistic relaying reduces the hardware and networking
-[resources](https://collective.flashbots.net/t/ideas-for-incentivizing-relays/586) required for a relay to be competitive, lowering the barrier of entry. 
+[resources](https://collective.flashbots.net/t/ideas-for-incentivizing-relays/586) required for a relay to be competitive, lowering the barrier of entry. From the builder perspective, 
+optimistic building requires collateral be posted, but it removes the need for them to be in the 
+high-prio queue of each relay they connect to. 
 
 We define the "critical path" as the set of operations and messages that compose 
 the block production pipeline beginning when the builder submits a bid. 
@@ -33,8 +35,7 @@ with the critical path.
 MEV is constantly being produced and extracted, rational
 builders are incentivized to colocate with relays, form trusted connections to relays, or even run
 their own relay infrastructure in order to minimize (down to $\mu s$ or $ns$) the time between when they build a block
-and when that header is part of the auction. We believe that by removing as much 
-much latency as possible from the pipeline, we can maintain a competitive and open builder ecosystem, while working to phase out relays all together. 
+and when that header is part of the auction. We believe that by simplifying the pipeline, we can maintain a competitive and open builder ecosystem, while working to phase out relays all together. 
 
 
 ## Block production today
@@ -50,14 +51,8 @@ of the block to the relay.
 </td></tr></table>
 
 #### What is the critical path?
-<!-- The relay has a number of tasks to perform:
-- storing the builder header and execution body,
-- validating the block using an execution node,
-- validating the proposer payment is present, and
-- publishing the winning block\*. -->
-
 The critical path runs through the relay, which is tasked with
-- receiving the full block over the network from the builder (this can be several MB worth of data),
+- receiving the full block over the network from the builder (this can be several MB of data and will increase with 4844),
 - validating the block against an execution node internally before communicating the winning header to the proposer, and
 - receiving the signed header from the proposer and publishing\* the block.
 
@@ -90,13 +85,17 @@ becomes eligible to win the auction. This benefits both the builders and
 the proposers because it allows bids to arrive later in the slot, thus capturing more 
 MEV for both parties. Under this design, builders can dishonestly submit high bids for invalid blocks
 that end up winning the auction, which results in a missed slot (because the proposer
-signed an invalid header). We account for this by requiring builders to post collateral to
-the relay which will be used to refund proposers if a slot is missed. See the [proposal](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md), [implementation](https://github.com/flashbots/mev-boost-relay/pull/285), and [community call](https://collective.flashbots.net/t/mev-boost-community-call-0-23-feb-2023/1348) for further details. 
-This proposal should lower the hardware and networking requirements of running a relay because now there is no need for large amounts of burst compute and bandwidth right at the end of the slot.
+signed an invalid header). Alternatively, EVM valid blocks could be proposed and included but not pay the proposer
+the value of the bid. We account for this by requiring builders to post collateral to
+the relay which will be used to refund proposers if a slot or payment is missed. See the [proposal](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md), [implementation](https://github.com/flashbots/mev-boost-relay/pull/285), and [community call](https://collective.flashbots.net/t/mev-boost-community-call-0-23-feb-2023/1348) for further details. 
+This proposal should lower the hardware and networking requirements of running a relay because now there is no need for large amounts of burst compute and bandwidth right at the end of the slot. 
+
+>The end of the slot is highly congested because all the highest bids are arriving in the final milliseconds before the proposer calls `getHeader`. This exaggerates the issue if simulation latency and further
+benefits builders who are vertically integrated with relays.
 
 Beyond the practical benefits mentioned above, we modified the critical path. Now, the relay is responsible for
 
-- receiving the full block over the network from the builder (this can be several MB worth of data),
+- receiving the full block over the network from the builder (this can be several MB of data and will increase with 4844),
 - communicating the winning header to the proposer, and
 - receiving the signed header from the proposer and publishing the block.
 
@@ -136,7 +135,7 @@ The figure below demonstrates the critical path under Optimistic Relaying v3.
 <table><tr><td>
 <img width="400" alt="non-optimistic" src="img/v3.png">
 
-1. The builder submits a header-only bid to the mempool. 
+1. The builder submits a header-only bid to the mempool (could be referred to as a "bidpool"). 
 2. The proposer sends the signed header back to mempool and the builder publishes the full block.
 </td></tr></table>
 
@@ -156,7 +155,7 @@ in the case of a missed slot. The relay observes the mempool and determines if
 the proposer as in v1 \& v2. 
 
 > Note that the proposer payments could be implemented in an unconditional way. Such a mechanism was [presented](https://github.com/flashbots/mev-boost/issues/109)
-by Alex O. and Stephane. This would reduce the trust assumptions to zero. The tradeoff here
+by Alex O. and Stephane. This would eliminate the need for the relay to directly control the builder collateral, and reduce the relay to a data-availability oracle for the signed block appearing on time. The tradeoff here
 is the engineering complexity and inherent risk of using smart contracts to implement this logic.
 This may well be worth investing time into in the future, but we estimate that in the short-term, the 
 relay operators (or [guarantors](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md#relay-collateralization)) should handle the refunds manually.
