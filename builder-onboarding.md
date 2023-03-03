@@ -77,7 +77,7 @@ can be remedied.
 ### Posting collateral
 The first step in onboarding is posting collateral. To start, we are capping this 
 collateral at 1 ETH per-pubkey. Collateral can be sent to \<INSERT ENS NAME\>. 
-Please send us the transaction details via telegram or discord, and we will manually update
+Please send us the transaction details via telegram or discord and we will manually update
 the database. 
 
 ### Using collateral IDs
@@ -101,9 +101,9 @@ a post-mortem that identifies
 2. the missing slot number,
 3. a timeline of events including the timestamps leading up to the invalid header being signed,
 4. the details of the simulation error (including the invalid payload and the resulting error message), and 
-5. an analysis of what caused the error and a solution for the issue.
+5. an analysis of what caused the error and a solution.
 
-We will keep a public log of these missed slots, and engage with the community about 
+We will keep a public log of these missed slots and engage with the community about 
 the frequency and overall network impact of optimistic relaying. 
 
 > When a slot is missed, the proposer needs to be refunded based on the value of the 
@@ -112,7 +112,7 @@ error, and the expectation is that the builder directly refunds the validator. T
 the collateral held by the relay remains untouched. If after 24 hours, the builder 
 has not responded and refunded the proposer, the builder collateral will be used 
 to execute the refund. We hope that in the vast majority of cases, the builder 
-handles the refund so that there is no need to report collateral when they want
+handles the refund so that there is no need to repost collateral when they want
 to activate optimistic building again. 
 
 ### Handling other block simulation failures 
