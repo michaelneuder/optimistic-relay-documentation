@@ -10,12 +10,12 @@ over Telegram or Discord along with the associated builder pubkeys. The transact
 an address associated with one of the pubkeys. 
 >2. Reach out to us when a builder pubkey is ready to be activated. This will be a manual step where
 we look at recent block submissions to ensure a low historical simulation error rate on a per-pubkey basis.
->3. In the case of a missed slot caused by optimistic relaying or an insufficient proposer payment, we will reach out to the builder with the details and the expectation
-is that the proposer refund will come directly from the builder. If this isn't done in 24 hours,
+>3. In the case of an insufficient proposer payment or a missed slot caused by optimistic relaying, we will reach out to the builder with the details and the expectation
+is that the builder directly refunds the proposer. If this isn't done in 24 hours,
 we will use the collateral to execute the refund.
 >4. After any demotion for which the builder is at fault, we will send the error details to the builder and engage with a discussion on
-what could have caused the error. Once we agree that the issue is addressed, we can reactivate 
-optimistic relaying for that pubkey.
+what could have caused the error. Once we agree that the issue is addressed, we will reactivate 
+optimistic relaying for that builder.
 >5. Acknowledge that you have seen this document and understand the requirements. 
 
 ### Purpose
@@ -36,12 +36,12 @@ but ends up resulting in a simulation error. Once this happens, the relay marks 
 as demoted, and beginning in the next slot, their blocks are handled pessimistically. Details about
 the demotion are recorded in the DB.
 3. __Collateral__ — To disincentize builders from submitting invalid blocks, collateral must be posted 
-to ensure a proposer who misses a slot as the result of a bad block is refunded. This collateral
+to ensure a proposer who misses a slot or isn't fully paid is refunded. This collateral
 is controlled by the relay operators, but will only be used to issue a refund if a builder 
-doesn't handle the refund directly.
+doesn't handle the refund directly within 24 hours of the demotion.
 4. __Builder IDs__ — To enable builders to share collateral across many pubkeys, we allow
 builder IDs to uniquely identify the collateral associated with each key. However, a demotion
-results in all pubkeys that share a builder id to be demoted simultaneously. 
+results in all pubkeys that share a builder ID being demoted simultaneously. 
 
 ### Optimistic blocks
 Two factors determine if a given block is processed optimistically:
@@ -53,17 +53,17 @@ A block that has value less-than or equal to `collateral_value` (units in Wei) f
 who is *not* demoted will be handled optimistically. Consider the example below:
 
 ```
- builder_pubkey | is_demoted |   collateral_value   |  collateral_id   
+ builder_pubkey | is_demoted |   collateral_value   |  builder_id   
 ----------------+------------+----------------------+------------------
  0xacea6a...    | false      | 1000000000000000000  | mikes-collateral
  0xa841ce...    | false      | 1000000000000000000  | mikes-collateral
  0xb67a51...    | true       | 1000000000000000000  | flashbots
  0xaa1488...    | true       |                   0  | bloxroute
 ```
-Pubkeys `0xacea6a` and `0xa841ce` are not demoted and share a collateral value of 1 ETH with the `collateral_id=mikes-collateral`, so any block
+Pubkeys `0xacea6a` and `0xa841ce` are not demoted and share a collateral value of 1 ETH with the `builder_id=mikes-collateral`, so any block
 that they submit that has a value of less than 1 ETH will be optimistic. If either pubkey submits an invalid block, they will both be demoted. Builder `0xb67a51` 
 also has 1 ETH of collateral, but because `is_demoted=true`, their blocks will all be processed
-pessimistically. Builder `0xaa1488` has no collateral, so their blocks will be processed pessimistically.
+pessimistically. Builder `0xaa1488` has no collateral, so their blocks will also be processed pessimistically.
 
 Once the collateral is updated in the database and the builder indicates that they are ready,
 we will manually change the `is_demoted` to `false`. At any point if a demotion occurs, `is_demoted` will be set back to `true`, and
@@ -72,8 +72,7 @@ Once the error is understood and there is a consensus that it is safe to resume 
 we will manually reset `is_demoted` to `false`.
 
 > Any block simulation failure will result in a demotion that records the details of the
-failed simulations. We will work with the builders to understand the root cause and how it 
-can be remedied.
+failed simulations, even if that failure didn't result in a missed slot.
 
 ### Posting collateral
 The first step in onboarding is posting collateral. To start, we are capping this 
@@ -83,8 +82,8 @@ the database.
 
 ### Using builders IDs
 If a builder wishes to use the same collateral for multiple pubkeys, please let us
-know on Telegram or Discord and we will assign a collateral id to all the relevant pubkeys.
-Again, the result of using collateral IDs is that any demotion for one of these pubkeys 
+know on Telegram or Discord and we will assign a builder ID to all the relevant pubkeys.
+Again, the result of using builder IDs is that any demotion for one of these pubkeys 
 results in all of them being demoted.
 
 ### Handling missed slots
@@ -107,9 +106,9 @@ a post-mortem that identifies
 We will keep a public log of these missed slots and engage with the community about 
 the frequency and overall network impact of optimistic relaying. 
 
-> When a slot is missed or an insufficient payment to the proposer, the proposer needs to be refunded based on the value of the 
+> When a slot is missed or there is an insufficient proposer payment, the proposer needs to be refunded based on the value of the 
 winning bid and an additional 0.01 ETH for the missing consensus layer rewards. The relay operators will reach out to the builder with the details of the
-error, and the expectation is that the builder directly refunds the validator. Thus 
+error and the size of the refund, and the expectation is that the builder directly refunds the proposer. Thus 
 the collateral held by the relay remains untouched. If after 24 hours, the builder 
 has not responded and refunded the proposer, the builder collateral will be used 
 to execute the refund. We hope that in the vast majority of cases, the builder 
@@ -120,8 +119,7 @@ to activate optimistic building again.
 Any block simulation error for an optimistic builder will result in a demotion that
 requires manual intervention. Even if the invalid block does not win the auction, we 
 want to examine the error before manually reactivating optimistic relaying for that builder. 
-When a demotion occurs, we will reach out to the builder with the details of the simulation error
-to initiate the analysis of the failure. Unlike missed slots, we don't plan on posting a post-mortem for each simulation error that results in a demotion, but we still
+Unlike missed slots, we don't plan on posting a post-mortem for each simulation error that results in a demotion, but we still
 want to understand what went wrong and have high confidence that it won't occur again.
 
 ### Acknowledgement of risks and requirements
