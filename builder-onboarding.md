@@ -5,7 +5,7 @@ document outlines the process of onboarding a builder to the system.
 
 **tl;dr;**
 
->1. Post a max of 1 ETH collateral to \<INSERT ENS NAME\>. Send us the transaction details
+>1. Post a max of 1 ETH collateral to `relay.ultrasound.eth`. Send us the transaction details
 over Telegram or Discord along with the associated builder pubkeys. The transaction must come from
 an address associated with one of the pubkeys. 
 >2. Reach out to us when a builder pubkey is ready to be activated. This will be a manual step where
@@ -76,7 +76,7 @@ failed simulations, even if that failure didn't result in a missed slot.
 
 ### Posting collateral
 The first step in onboarding is posting collateral. To start, we are capping this 
-collateral at 1 ETH per-pubkey. Collateral can be sent to \<INSERT ENS NAME\>. 
+collateral at 1 ETH per-pubkey. Collateral can be sent to `relay.ultrasound.eth`. 
 Please send us the transaction details on Telegram or Discord and we will manually update
 the database. 
 
