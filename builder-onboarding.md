@@ -11,12 +11,12 @@ an address associated with one of the pubkeys.
 >2. Reach out to us when a builder pubkey is ready to be activated. This will be a manual step where
 we look at recent block submissions to ensure a low historical simulation error rate on a per-pubkey basis.
 >3. In the case of an insufficient proposer payment or a missed slot caused by optimistic relaying, we will reach out to the builder with the details and the expectation
-is that the builder directly refunds the proposer. If this isn't done in 24 hours,
-we will use the collateral to execute the refund.
+is that the builder directly refunds the proposer. The size of the refund is the bid value + 0.01 ETH to compensate for the missing consensus rewards. If the refund isn't done in 24 hours,
+we will use the collateral to repay the proposer.
 >4. After any demotion for which the builder is at fault, we will send the error details to the builder and engage with a discussion on
 what could have caused the error. Once we agree that the issue is addressed, we will reactivate 
 optimistic relaying for that builder.
->5. Acknowledge that you have seen this document and understand the requirements. 
+>5. We ask builders to acknowledge that they have seen this document and understand the requirements. 
 
 ### Purpose
 Outline the steps needed for builders to onboard to optimistic relaying on the
