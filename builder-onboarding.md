@@ -1,25 +1,26 @@
 # Optimistic relaying — builder onboarding
 
-Thanks for considering optimistic relaying with the Ultra Sound Relay :-) This 
-document outlines the process of onboarding a builder pubkey to the system.
+Thanks for considering optimistic relaying with the ultra sound relay :-) This 
+document outlines the process of onboarding a builder to the system.
 
 **tl;dr;**
 
 >1. Post a max of 1 ETH collateral to \<INSERT ENS NAME\>. Send us the transaction details
-over telegram or discord along with the associated builder pubkeys.
+over Telegram or Discord along with the associated builder pubkeys. The transaction must come from
+an address associated with one of the pubkeys. 
 >2. Reach out to us when a builder pubkey is ready to be activated. This will be a manual step where
 we look at recent block submissions to ensure a low historical simulation error rate on a per-pubkey basis.
->3. In the case of a missed slot caused by optimistic relaying, we will reach out to the builder with the details and the expectation
+>3. In the case of a missed slot caused by optimistic relaying or an insufficient proposer payment, we will reach out to the builder with the details and the expectation
 is that the proposer refund will come directly from the builder. If this isn't done in 24 hours,
 we will use the collateral to execute the refund.
->4. After any demotion, we will send the error details to the builder and engage with a discussion on
+>4. After any demotion for which the builder is at fault, we will send the error details to the builder and engage with a discussion on
 what could have caused the error. Once we agree that the issue is addressed, we can reactivate 
 optimistic relaying for that pubkey.
 >5. Acknowledge that you have seen this document and understand the requirements. 
 
 ### Purpose
 Outline the steps needed for builders to onboard to optimistic relaying on the
-[Ultra Sound Relay](https://relay.ultrasound.money/). Optimistic relaying allows
+[ultra sound relay](https://relay.ultrasound.money/). Optimistic relaying allows
 builders to reduce the latency of their block submissions by asynchronously 
 validating their blocks. For further context, see the [proposal](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md) and [implementation](https://github.com/flashbots/mev-boost-relay/pull/285); it 
 was also discussed in the [MEV community call #0](https://collective.flashbots.net/t/mev-boost-community-call-0-23-feb-2023/1348).
@@ -36,11 +37,11 @@ as demoted, and beginning in the next slot, their blocks are handled pessimistic
 the demotion are recorded in the DB.
 3. __Collateral__ — To disincentize builders from submitting invalid blocks, collateral must be posted 
 to ensure a proposer who misses a slot as the result of a bad block is refunded. This collateral
-is controlled by the relay operators, but will only be used to issue a refund if a builder refuses 
+is controlled by the relay operators, but will only be used to issue a refund if a builder 
 doesn't handle the refund directly.
-4. __Collateral IDs__ — To enable builders to share collateral across many pubkeys, we allow
-collateral IDs to uniquely identify the collateral associated with each key. However, a demotion
-results in all pubkeys that share a collateral id to be demoted simultaneously. 
+4. __Builder IDs__ — To enable builders to share collateral across many pubkeys, we allow
+builder IDs to uniquely identify the collateral associated with each key. However, a demotion
+results in all pubkeys that share a builder id to be demoted simultaneously. 
 
 ### Optimistic blocks
 Two factors determine if a given block is processed optimistically:
@@ -77,12 +78,12 @@ can be remedied.
 ### Posting collateral
 The first step in onboarding is posting collateral. To start, we are capping this 
 collateral at 1 ETH per-pubkey. Collateral can be sent to \<INSERT ENS NAME\>. 
-Please send us the transaction details via telegram or discord and we will manually update
+Please send us the transaction details on Telegram or Discord and we will manually update
 the database. 
 
-### Using collateral IDs
+### Using builders IDs
 If a builder wishes to use the same collateral for multiple pubkeys, please let us
-know via telegram or discord and we will assign a collateral id to all the relevant pubkeys.
+know on Telegram or Discord and we will assign a collateral id to all the relevant pubkeys.
 Again, the result of using collateral IDs is that any demotion for one of these pubkeys 
 results in all of them being demoted.
 
@@ -106,8 +107,8 @@ a post-mortem that identifies
 We will keep a public log of these missed slots and engage with the community about 
 the frequency and overall network impact of optimistic relaying. 
 
-> When a slot is missed, the proposer needs to be refunded based on the value of the 
-winning bid. The relay operators will reach out to the builder with the details of the
+> When a slot is missed or an insufficient payment to the proposer, the proposer needs to be refunded based on the value of the 
+winning bid and an additional 0.01 ETH for the missing consensus layer rewards. The relay operators will reach out to the builder with the details of the
 error, and the expectation is that the builder directly refunds the validator. Thus 
 the collateral held by the relay remains untouched. If after 24 hours, the builder 
 has not responded and refunded the proposer, the builder collateral will be used 
@@ -118,7 +119,7 @@ to activate optimistic building again.
 ### Handling other block simulation failures 
 Any block simulation error for an optimistic builder will result in a demotion that
 requires manual intervention. Even if the invalid block does not win the auction, we 
-want to examine the error before manually reactivating optimistic relaying for that pubkey. 
+want to examine the error before manually reactivating optimistic relaying for that builder. 
 When a demotion occurs, we will reach out to the builder with the details of the simulation error
 to initiate the analysis of the failure. Unlike missed slots, we don't plan on posting a post-mortem for each simulation error that results in a demotion, but we still
 want to understand what went wrong and have high confidence that it won't occur again.
@@ -126,7 +127,7 @@ want to understand what went wrong and have high confidence that it won't occur 
 ### Acknowledgement of risks and requirements
 
 Thanks again for considering optimistic relaying! The last thing we ask is that 
-each builder acknowledges via telegram or discord that they have seen this document and understand the risks
+each builder acknowledges through Telegram or Discord that they have seen this document and understand the risks
 and requirements of this experiment. 
 
 <!-- public API for them to check builder status? dashboard on USR? -->
