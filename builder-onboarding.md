@@ -5,9 +5,9 @@ Thank you for your interest in low-latency optimistic relaying with [the ultra s
 **TLDR**
 
 >1. Share with us over Telegram or Discord the list of builder pubkeys you want promoted for optimistic relaying. We will manually review recent bid submissions from those pubkeys to ensure a low historical rate of bad bids. A bad bid is one with an invalid block or an insufficient payment to the proposer.
->2. Post a maximum of 1 ETH collateral to `relay.ultrasound.eth` and share with us the transaction details. The transaction sender must be an address publicly associated with one of your builder pubkeys, ideally your primary fee recipient address.
+>2. Post a maximum of 1 ETH collateral to `relay.ultrasound.eth` and share the transaction details with us. The transaction sender must be an address publicly associated with one of your builder pubkeys, ideally your primary fee recipient address.
 >3. The relay will automatically demote you for submitting a single bad bid to the relay. You will only be re-promoted after the underlying reason for submitting a bad bid is addressed.
->4. A bad bid winning the auction will causes an on-chain incident, i.e. a missed slot or an insufficient proposer payment. We expect you to directly compensate the proposer the bid value plus a fixed 0.01 ETH penalty within 24 hours and send us the transaction details.
+>4. A bad bid winning the auction will cause an on-chain incident, i.e. a missed slot or an insufficient proposer payment. We expect you to directly compensate the proposer the bid value plus a fixed 0.01 ETH penalty within 24 hours and send us the transaction details.
 >5. If a proposer is not compensated within 24 hours we may use your collateral to compensate the proposer ourselves.
 
 ### Purpose
