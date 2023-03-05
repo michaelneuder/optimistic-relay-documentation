@@ -1,56 +1,131 @@
-# Optimistic relaying—builder guide
+# Optimistic relaying — builder onboarding
 
-Thank you for your interest in low-latency optimistic relaying with [the ultra sound relay](https://relay.ultrasound.money)! This document is an onboarding guide for you, Ethereum block builder. Please take the time to understand it :)
+Thanks for considering optimistic relaying with the ultra sound relay :-) This 
+document outlines the process of onboarding a builder to the system.
 
-**TLDR**
+**tl;dr;**
 
->1. Share with us over Telegram or Discord the list of builder pubkeys you want promoted for optimistic relaying. We will manually review recent bid submissions from those pubkeys to ensure a low historical rate of bad bids. A bad bid is one with an invalid block or an insufficient payment to the proposer.
->2. Post a maximum of 1 ETH collateral to `relay.ultrasound.eth` and share with us the transaction details. The transaction sender must be an address publicly associated with one of your builder pubkeys, ideally your primary fee recipient address.
->3. The relay will automatically demote you for submitting a single bad bid to the relay. You will only be re-promoted after the underlying reason for submitting a bad bid is addressed.
->4. A bad bid winning the auction will causes an onchain incident, i.e. a missed slot or an insufficient proposer payment. We expect you to directly compensate the proposer the bid value plus a fixed 0.01 ETH penalty within 24 hours and send us the transaction details.
->5. If a proposer is not compensated within 24 hours we may use your collateral to compensate the proposer ourselves.
+>1. Post a max of 1 ETH collateral to `relay.ultrasound.eth`. Send us the transaction details
+over Telegram or Discord along with the associated builder pubkeys. The transaction must come from
+an address associated with one of the pubkeys. 
+>2. Reach out to us when a builder pubkey is ready to be activated. This will be a manual step where
+we look at recent block submissions to ensure a low historical simulation error rate on a per-pubkey basis.
+>3. In the case of an insufficient proposer payment or a missed slot caused by optimistic relaying, we will reach out to the builder with the details and the expectation
+is that the builder directly refunds the proposer. The size of the refund is the bid value + 0.01 ETH to compensate for the missing consensus rewards. If the refund isn't done in 24 hours,
+we will use the collateral to repay the proposer.
+>4. After any demotion for which the builder is at fault, we will send the error details to the builder and engage with a discussion on
+what could have caused the error. Once we agree that the issue is addressed, we will reactivate 
+optimistic relaying for that builder.
+>5. We ask builders to acknowledge that they have seen this document and understand the requirements. 
 
 ### Purpose
+Outline the steps needed for builders to onboard to optimistic relaying on the
+[ultra sound relay](https://relay.ultrasound.money/). Optimistic relaying allows
+builders to reduce the latency of their block submissions by asynchronously 
+validating their blocks. For further context, see the [proposal](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md) and [implementation](https://github.com/flashbots/mev-boost-relay/pull/285); it 
+was also discussed in the [MEV community call #0](https://collective.flashbots.net/t/mev-boost-community-call-0-23-feb-2023/1348).
 
-This document outlines key aspects of optimistic relaying with the ultra sound relay. Optimistic relaying allows builders to reduce the latency of their bid submissions through asynchronous simulation. For more detail, see [the proposal](https://github.com/michaelneuder/opt-relay-docs/blob/main/proposal.md), [the implementation](https://github.com/flashbots/mev-boost-relay/pull/285), and the discussion in [MEV community call #0](https://collective.flashbots.net/t/mev-boost-community-call-0-23-feb-2023/1348).
+### Concepts 
+The implementation introduces 4 new concepts:
 
-### Optimistic logic
+1. __Demotion status__ — Each builder pubkey has a new property called `is_demoted`, which indicates
+whether or not the pubkey is eligible for optimistic block handling. All builders
+are initially demoted and it is a manual process to be promoted to optimistic mode. 
+2. __Demotions__ — Demotions occur when a builder submits a block that is optimistically processed, 
+but ends up resulting in a simulation error. Once this happens, the relay marks the builder pubkey
+as demoted, and beginning in the next slot, their blocks are handled pessimistically. Details about
+the demotion are recorded in the DB.
+3. __Collateral__ — To disincentize builders from submitting invalid blocks, collateral must be posted 
+to ensure a proposer who misses a slot or isn't fully paid is refunded. This collateral
+is controlled by the relay operators, but will only be used to issue a refund if a builder 
+doesn't handle the refund directly within 24 hours of the demotion.
+4. __Builder IDs__ — To enable builders to share collateral across many pubkeys, we allow
+builder IDs to uniquely identify the collateral associated with each key. However, a demotion
+results in all pubkeys that share a builder ID being demoted simultaneously. 
 
-The optimistic relay implementation add three DB fields for every builder pubkey:
+### Optimistic blocks
+Two factors determine if a given block is processed optimistically:
 
-1. `is_optimistic`: This boolean, which defaults to `false`, indicates whether or not the pubkey is eligible for optimistic relaying. Promoting a builder pubkey for optimistic relaying is a manual process. When a builder submits a bad bid `is_optimistic` is set to `false` before moving to the next slot, with demotion details recorded in the relay DB.
-2. `collateral`: This integer reflects the collateral value in wei protecting proposers against bad bids. Optimistic relaying happens when `is_optimistic` is `true` and `collateral` is at least as large as the bid value.
-3. `builder_id`: This string is used to share collateral across multiple pubkeys. A demotion from one pubkey will result in all pubkeys sharing the same builder ID to get demoted simultaneously.
+1. the pubkey's demotion status, and
+2. the value of the collateral associated with the pubkey.
 
-Consider the example below:
+A block that has value less-than or equal to `collateral_value` (units in Wei) from a builder
+who is *not* demoted will be handled optimistically. Consider the example below:
 
 ```
- builder_pubkey | is_optimistic | collateral         | builder_id
-----------------+---------------+--------------------+------------------
- 0xaaaaaa...    | true          | 990000000000000000 | mike
- 0xbbbbbb...    | true          | 990000000000000000 | mike
- 0xcccccc...    | false         | 990000000000000000 | flashbots
- 0xdddddd...    | false         |                  0 | bloxroute
+ builder_pubkey | is_demoted |   collateral_value   |  builder_id   
+----------------+------------+----------------------+------------------
+ 0xacea6a...    | false      | 1000000000000000000  | mikes-collateral
+ 0xa841ce...    | false      | 1000000000000000000  | mikes-collateral
+ 0xb67a51...    | true       | 1000000000000000000  | flashbots
+ 0xaa1488...    | true       |                   0  | bloxroute
 ```
+Pubkeys `0xacea6a` and `0xa841ce` are not demoted and share a collateral value of 1 ETH with the `builder_id=mikes-collateral`, so any block
+that they submit that has a value of less than 1 ETH will be optimistic. If either pubkey submits an invalid block, they will both be demoted. Builder `0xb67a51` 
+also has 1 ETH of collateral, but because `is_demoted=true`, their blocks will all be processed
+pessimistically. Builder `0xaa1488` has no collateral, so their blocks will also be processed pessimistically.
 
-Pubkeys `0xaaaaaa` and `0xbbbbbb` share the same builder ID `mike` and collateral of 0.99 ETH. (0.99 ETH is the maximum 1 ETH collateral minus 0.01 ETH for the fixed penalty.) Since `is_optimistic` is `true` any bid of value of less than or equal to 0.99 ETH will be relayed optimistically. If either pubkey submits an invalid bid both pubkeys will be demoted before the next slot.
+Once the collateral is updated in the database and the builder indicates that they are ready,
+we will manually change the `is_demoted` to `false`. At any point if a demotion occurs, `is_demoted` will be set back to `true`, and
+a follow up analysis will be conducted to determine the cause of the block simulation failure.
+Once the error is understood and there is a consensus that it is safe to resume optimistic building, 
+we will manually reset `is_demoted` to `false`.
 
-Pubkey `0xcccccc` also has 0.99 ETH of collateral but `is_optimistic` is `false` so their bids will not be relayed optimistically. Builder `0xdddddd` has no collateral so their bids will also not be relayed optimistically.
+> Any block simulation failure will result in a demotion that records the details of the
+failed simulations, even if that failure didn't result in a missed slot.
 
-### Collateral
+### Posting collateral
+The first step in onboarding is posting collateral. To start, we are capping this 
+collateral at 1 ETH per-pubkey. Collateral can be sent to `relay.ultrasound.eth`. 
+Please send us the transaction details on Telegram or Discord and we will manually update
+the database. 
 
-Collateral for optimistic relaying must be posted to `relay.ultrasound.eth` from an address publicly associated with one of your builder pubkeys, ideally your primary fee recipient address. The maximum collateral per pubkey is currently 1 ETH—this value may be increased or decreased from time to time.
+### Using builders IDs
+If a builder wishes to use the same collateral for multiple pubkeys, please let us
+know on Telegram or Discord and we will assign a builder ID to all the relevant pubkeys.
+Again, the result of using builder IDs is that any demotion for one of these pubkeys 
+results in all of them being demoted.
 
-### Builders ID
+### Handling missed slots
+Missed slots occur when 
 
-For collateral efficiency you may reuse the same piece of collateral for multiple pubkeys. Let us know which pubkeys you want to share builder ID. A demotion for one pubkeys will result in the demotion of all pubkeys sharing a builder ID.
+1. an optimistic builder submits an invalid block, and
+2. that block wins the auction and the header is signed by the proposer.
 
-### Promotions and demotions
+Once this occurs, the invalid block will be be rejected by the network and the proposer
+has no recourse, because signing a different header for that same slot is a slashing condition.
+This is the worst-case scenario for optimistic relaying. When a slot is missed we will publish
+a post-mortem that identifies
 
-We will manually promote your pubkeys by setting `is_optimistic` to `true` after collateral is posted and you have indicated you are ready. If a bad bid is submitted, even if the bid does not win the auction, the demotion logic resets `is_optimistic` back to `false` before the next slot. Only after the root cause of a demotion is understood and fixed can we manually reset `is_optimistic` to `true`.
+1. the builder and proposer involved,
+2. the missing slot number,
+3. a timeline of events including the timestamps leading up to the invalid header being signed,
+4. the details of the simulation error (including the invalid payload and the resulting error message), and 
+5. an analysis of what caused the error and a solution.
 
-### Onchain incidents
+We will keep a public log of these missed slots and engage with the community about 
+the frequency and overall network impact of optimistic relaying. 
 
-An onchain incident happens when an invalid bid wins the auction and the proposer needs to be compensated for a missed slot or an insufficient payment. Please note that we expect you to directly compensate the proposer for a bad bid within 24 hours of the demotion. If not, we may use your collateral to compensate the proposer ourselves. We will publicly publish on [XXX](...) a post-mortem for each onchain incident with details of the bad bid.
+> When a slot is missed or there is an insufficient proposer payment, the proposer needs to be refunded based on the value of the 
+winning bid and an additional 0.01 ETH for the missing consensus layer rewards. The relay operators will reach out to the builder with the details of the
+error and the size of the refund, and the expectation is that the builder directly refunds the proposer. Thus 
+the collateral held by the relay remains untouched. If after 24 hours, the builder 
+has not responded and refunded the proposer, the builder collateral will be used 
+to execute the refund. We hope that in the vast majority of cases, the builder 
+handles the refund so that there is no need to repost collateral when they want
+to activate optimistic building again. 
+
+### Handling other block simulation failures 
+Any block simulation error for an optimistic builder will result in a demotion that
+requires manual intervention. Even if the invalid block does not win the auction, we 
+want to examine the error before manually reactivating optimistic relaying for that builder. 
+Unlike missed slots, we don't plan on posting a post-mortem for each simulation error that results in a demotion, but we still
+want to understand what went wrong and have high confidence that it won't occur again.
+
+### Acknowledgement of risks and requirements
+
+Thanks again for considering optimistic relaying! The last thing we ask is that 
+each builder acknowledges through Telegram or Discord that they have seen this document and understand the risks
+and requirements of this experiment. 
 
 <!-- public API for them to check builder status? dashboard on USR? -->
